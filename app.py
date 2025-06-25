@@ -13,7 +13,9 @@ def test():
 def read_excel():
     if 'file' not in request.files:
         return jsonify({'error': 'No file provided'}), 400
-
+    
+    print("Request.files:", request.files)
+    
     file = request.files['file']
     excel_file = BytesIO(file.read())
 
@@ -25,7 +27,7 @@ def read_excel():
             "sheetName": sheet_name,
             "data": df.to_dict(orient='records')
         })
-
+    print(f"result: {result}")
     return jsonify(result)
 
 if __name__ == '__main__':
