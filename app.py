@@ -1,27 +1,39 @@
 from flask import Flask, request, jsonify
-import pandas as pd
-from io import BytesIO
+import fitz  # PyMuPDF
+import uuid
+import os
 
 app = Flask(__name__)
 
-@app.route('/read_excel', methods=['POST'])
-def read_excel():
+def is_scanned_pdf(pdf_path):
+    try:
+        doc = fitz.open(pdf_path)
+        scanned_pages = sum(1 for i in range(len(doc)) if not doc[i].get_text().strip())
+        total_pages = len(doc)
+        doc.close()
+        return scanned_pages == total_pages
+    except Exception as e:
+        print(f"Error checking PDF: {e}")
+        return False
+
+@app.route('/check-pdf-type', methods=['POST'])
+def check_pdf_type():
     if 'file' not in request.files:
-        return jsonify({'error': 'No file provided'}), 400
+        return jsonify({'error': 'No file uploaded'}), 400
 
     file = request.files['file']
-    excel_file = BytesIO(file.read())
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
 
-    xls = pd.read_excel(excel_file, sheet_name=None)
+    temp_pdf_path = f"temp_{uuid.uuid4().hex}.pdf"
+    file.save(temp_pdf_path)
 
-    result = []
-    for sheet_name, df in xls.items():
-        result.append({
-            "sheetName": sheet_name,
-            "data": df.to_dict(orient='records')
-        })
-
-    return jsonify(result)
+    try:
+        is_scanned = is_scanned_pdf(temp_pdf_path)
+        os.remove(temp_pdf_path)
+        return jsonify({'type': 'scanned' if is_scanned else 'text'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
