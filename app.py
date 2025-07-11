@@ -35,6 +35,10 @@ def check_pdf_type():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/', methods=['GET'])
+def index():
+    return jsonify({'message': 'Server is running!'}), 200
+
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
 
