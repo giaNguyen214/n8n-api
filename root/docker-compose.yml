@@ -1,0 +1,38 @@
+services:
+  n8n:
+    image: n8nio/n8n
+    container_name: n8n
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_SECURE_COOKIE=false
+      - GENERIC_TIMEZONE=Asia/Ho_Chi_Minh
+      - N8N_EDITOR_BASE_URL=${EXTERNAL_IP}
+      - WEBHOOK_URL=${EXTERNAL_IP}
+      - N8N_DEFAULT_BINARY_DATA_MODE=filesystem
+    volumes:
+      - ./shared:/shared
+    restart: always
+
+  python-worker:
+    image: python:3.10-slim
+    container_name: python-worker
+    volumes:
+      - ./shared:/shared
+    working_dir: /shared
+    command: tail -f /dev/null
+    restart: always
+
+  pdf-api:
+    build:
+      context: ./docker/pdf-check-api
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./docker/pdf-check-api:/app
+      - ./shared:/shared
+    working_dir: /app
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=development
+    command: flask run --host=0.0.0.0 --port=5000
