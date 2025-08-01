@@ -32,12 +32,17 @@ def check_pdf():
     if not os.path.exists(pdf_path):
         return jsonify({'error': 'File does not exist'}), 404
 
-    # return jsonify({'message': f'File {pdf_path} exists'})
     try:
         is_scanned = is_scanned_pdf(pdf_path)
         return jsonify({'type': 'scanned' if is_scanned else 'text'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    finally:
+        try:
+            if os.path.exists(pdf_path):
+                os.remove(pdf_path)
+        except Exception as e:
+            print(f"Error removing file {pdf_path}: {e}")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
